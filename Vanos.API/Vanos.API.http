@@ -1,6 +1,19 @@
-@Vanos.API_HostAddress = http://localhost:5107
+@Vanos.API_HostAddress = https://localhost:7154
 
-GET {{Vanos.API_HostAddress}}/weatherforecast/
+### Buscar todos os Motoristas
+GET {{Vanos.API_HostAddress}}/api/drivers
 Accept: application/json
 
-###
+### Cadastrar um Novo Motorista
+POST {{Vanos.API_HostAddress}}/api/drivers
+Content-Type: application/json
+
+{
+  "fullName": "Cauan Braga",
+  "cpf": "123.456.789-00",
+  "phoneNumber": "19 98888-7777",
+  "licensePlate": "VAN-2026",
+  "studentCapacity": 15,
+  "pixKey": "cauan@email.com",
+  "isActive": true
+}
