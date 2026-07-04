@@ -17,3 +17,24 @@ Content-Type: application/json
   "pixKey": "cauan@email.com",
   "isActive": true
 }
+
+### Cadastrar um Novo Aluno vinculado ao Motorista 1
+POST {{Vanos.API_HostAddress}}/api/students
+Content-Type: application/json
+
+{
+  "fullName": "Lucas Silva",
+  "guardianName": "Ana Silva",
+  "guardianPhoneNumber": "19 97777-6666",
+  "zipCode": "13086-900",
+  "street": "Rodovia Dom Pedro I",
+  "number": "Km 136",
+  "complement": "Campus",
+  "neighborhood": "Parque das Universidades",
+  "city": "Campinas",
+  "state": "SP",
+  "schoolName": "PUC-Campinas",
+  "driverId": 1,
+  "isGoingToday": true,
+  "isReturningToday": true
+}
