@@ -20,8 +20,7 @@
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
 
-        public string SchoolName { get; set; } = string.Empty;
-
+        public int SchoolId { get; set; }
         public int DriverId { get; set; }
 
         public bool IsGoingToday { get; set; } = true;

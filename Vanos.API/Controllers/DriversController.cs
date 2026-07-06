@@ -30,5 +30,20 @@ namespace Vanos.API.Controllers
 
             return CreatedAtAction(nameof(GetDrivers), new { id = driver.Id }, driver);
         }
+
+        [HttpGet("{id}/students")]
+        public async Task<ActionResult<IEnumerable<Student>>> GetStudentsByDriver(int id)
+        {
+            var students = await _context.Students
+                                         .Where(s => s.DriverId == id)
+                                         .ToListAsync();
+
+            if (!students.Any())
+            {
+                return NotFound("Nenhum aluno encontrado para a van deste motorista.");
+            }
+
+            return students;
+        }
     }
 }
