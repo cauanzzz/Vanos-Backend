@@ -38,3 +38,29 @@ Content-Type: application/json
   "isGoingToday": true,
   "isReturningToday": true
 }
+
+### Cadastrar uma Nova Escola
+POST {{Vanos.API_HostAddress}}/api/schools
+Content-Type: application/json
+
+{
+  "name": "PUC-Campinas",
+  "zipCode": "13086-900",
+  "street": "Rodovia Dom Pedro I",
+  "number": "Km 136",
+  "neighborhood": "Parque das Universidades",
+  "city": "Campinas",
+  "state": "SP"
+}
+
+### Gerar uma Mensalidade (Ligando o Aluno 1 ao Motorista 1)
+POST {{Vanos.API_HostAddress}}/api/monthlyfees
+Content-Type: application/json
+
+{
+  "studentId": 1,
+  "driverId": 1,
+  "amount": 350.00,
+  "dueDate": "2026-08-05T00:00:00",
+  "isPaid": false
+}
