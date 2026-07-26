@@ -11,5 +11,6 @@ namespace Vanos.API.Data
         public DbSet<Student> Students { get; set; }
         public DbSet<School> Schools { get; set; }
         public DbSet<MonthlyFee> MonthlyFees { get; set; }
+        public DbSet<User> Users { get; set; }
     }
 }
