@@ -13,6 +13,7 @@ namespace Vanos.API.Data
         public DbSet<MonthlyFee> MonthlyFees { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<DriverSchool> DriverSchools { get; set; }
+        public DbSet<HireRequest> HireRequests { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
