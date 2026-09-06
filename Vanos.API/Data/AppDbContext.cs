@@ -12,5 +12,11 @@ namespace Vanos.API.Data
         public DbSet<School> Schools { get; set; }
         public DbSet<MonthlyFee> MonthlyFees { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<DriverSchool> DriverSchools { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<DriverSchool>().HasKey(ds => new { ds.DriverId, ds.SchoolId });
+        }
     }
 }

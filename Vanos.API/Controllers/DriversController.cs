@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Vanos.API.Data;
+using Vanos.API.Extensions;
 using Vanos.API.Models;
 
 namespace Vanos.API.Controllers
@@ -44,6 +46,33 @@ namespace Vanos.API.Controllers
             }
 
             return students;
+        }
+
+        [HttpPut("{id}/schools")]
+        [Authorize(Roles = Roles.Driver)]
+        public async Task<IActionResult> UpdateSchoolsServed(int id, [FromBody] List<int> schoolIds)
+        {
+            if (id != User.GetDriverId())
+            {
+                return Forbid();
+            }
+
+            var driverExists = await _context.Drivers.AnyAsync(d => d.Id == id);
+            if (!driverExists)
+            {
+                return NotFound("Motorista não encontrado.");
+            }
+
+            var existing = _context.DriverSchools.Where(ds => ds.DriverId == id);
+            _context.DriverSchools.RemoveRange(existing);
+
+            foreach (var schoolId in schoolIds.Distinct())
+            {
+                _context.DriverSchools.Add(new DriverSchool { DriverId = id, SchoolId = schoolId });
+            }
+
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
     }
 }
