@@ -65,5 +65,75 @@ namespace Vanos.API.Controllers
 
             return Ok(hireRequest);
         }
+
+        [HttpPatch("{id}/accept")]
+        [Authorize(Roles = Roles.Driver)]
+        public async Task<IActionResult> Accept(int id)
+        {
+            var hireRequest = await _context.HireRequests.FindAsync(id);
+            if (hireRequest is null)
+            {
+                return NotFound("Solicitação não encontrada.");
+            }
+
+            if (hireRequest.DriverId != User.GetDriverId())
+            {
+                return Forbid();
+            }
+
+            if (hireRequest.Status != HireRequestStatus.Pending)
+            {
+                return BadRequest("Esta solicitação já foi respondida.");
+            }
+
+            hireRequest.Status = HireRequestStatus.Accepted;
+            hireRequest.RespondedAt = DateTime.UtcNow;
+
+            var student = await _context.Students.FindAsync(hireRequest.StudentId);
+            if (student is not null)
+            {
+                student.DriverId = hireRequest.DriverId;
+            }
+
+            var otherPendingRequests = await _context.HireRequests
+                .Where(r => r.StudentId == hireRequest.StudentId && r.Id != hireRequest.Id && r.Status == HireRequestStatus.Pending)
+                .ToListAsync();
+
+            foreach (var other in otherPendingRequests)
+            {
+                other.Status = HireRequestStatus.Rejected;
+                other.RespondedAt = DateTime.UtcNow;
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(hireRequest);
+        }
+
+        [HttpPatch("{id}/reject")]
+        [Authorize(Roles = Roles.Driver)]
+        public async Task<IActionResult> Reject(int id)
+        {
+            var hireRequest = await _context.HireRequests.FindAsync(id);
+            if (hireRequest is null)
+            {
+                return NotFound("Solicitação não encontrada.");
+            }
+
+            if (hireRequest.DriverId != User.GetDriverId())
+            {
+                return Forbid();
+            }
+
+            if (hireRequest.Status != HireRequestStatus.Pending)
+            {
+                return BadRequest("Esta solicitação já foi respondida.");
+            }
+
+            hireRequest.Status = HireRequestStatus.Rejected;
+            hireRequest.RespondedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Ok(hireRequest);
+        }
     }
 }

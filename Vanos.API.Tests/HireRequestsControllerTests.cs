@@ -76,5 +76,73 @@ namespace Vanos.API.Tests
 
             Assert.IsType<BadRequestObjectResult>(result.Result);
         }
+
+        [Fact]
+        public async Task Accept_AssignsDriverToStudentAndRejectsOtherPendingRequests()
+        {
+            using var context = TestHelpers.BuildContext();
+            context.Drivers.Add(new Driver { Id = 1, Fullname = "Cauan", CPF = "1", PhoneNumber = "1", LicensePlate = "X", StudentCapacity = 10, PixKey = "x" });
+            context.Drivers.Add(new Driver { Id = 2, Fullname = "Outro", CPF = "2", PhoneNumber = "2", LicensePlate = "Y", StudentCapacity = 10, PixKey = "y" });
+            context.Students.Add(new Student { Id = 1, FullName = "Lucas", ParentId = 10, SchoolId = 1, DriverId = null });
+            var accepted = new HireRequest { Id = 1, StudentId = 1, DriverId = 1, Status = HireRequestStatus.Pending };
+            var otherPending = new HireRequest { Id = 2, StudentId = 1, DriverId = 2, Status = HireRequestStatus.Pending };
+            context.HireRequests.AddRange(accepted, otherPending);
+            await context.SaveChangesAsync();
+
+            var controller = BuildController(context, TestHelpers.BuildDriverPrincipal(1));
+
+            var result = await controller.Accept(1);
+
+            Assert.IsType<OkObjectResult>(result);
+            var student = await context.Students.FindAsync(1);
+            Assert.Equal(1, student!.DriverId);
+            Assert.Equal(HireRequestStatus.Accepted, (await context.HireRequests.FindAsync(1))!.Status);
+            Assert.Equal(HireRequestStatus.Rejected, (await context.HireRequests.FindAsync(2))!.Status);
+        }
+
+        [Fact]
+        public async Task Accept_ForAnotherDriversRequest_ReturnsForbid()
+        {
+            using var context = TestHelpers.BuildContext();
+            context.HireRequests.Add(new HireRequest { Id = 1, StudentId = 1, DriverId = 1, Status = HireRequestStatus.Pending });
+            await context.SaveChangesAsync();
+
+            var controller = BuildController(context, TestHelpers.BuildDriverPrincipal(2));
+
+            var result = await controller.Accept(1);
+
+            Assert.IsType<ForbidResult>(result);
+        }
+
+        [Fact]
+        public async Task Accept_AlreadyRespondedRequest_ReturnsBadRequest()
+        {
+            using var context = TestHelpers.BuildContext();
+            context.HireRequests.Add(new HireRequest { Id = 1, StudentId = 1, DriverId = 1, Status = HireRequestStatus.Rejected });
+            await context.SaveChangesAsync();
+
+            var controller = BuildController(context, TestHelpers.BuildDriverPrincipal(1));
+
+            var result = await controller.Accept(1);
+
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task Reject_SetsStatusToRejectedWithoutTouchingStudent()
+        {
+            using var context = TestHelpers.BuildContext();
+            context.Students.Add(new Student { Id = 1, FullName = "Lucas", ParentId = 10, SchoolId = 1, DriverId = null });
+            context.HireRequests.Add(new HireRequest { Id = 1, StudentId = 1, DriverId = 1, Status = HireRequestStatus.Pending });
+            await context.SaveChangesAsync();
+
+            var controller = BuildController(context, TestHelpers.BuildDriverPrincipal(1));
+
+            var result = await controller.Reject(1);
+
+            Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(HireRequestStatus.Rejected, (await context.HireRequests.FindAsync(1))!.Status);
+            Assert.Null((await context.Students.FindAsync(1))!.DriverId);
+        }
     }
 }
