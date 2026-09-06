@@ -1,53 +1,80 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Vanos.API.Data;
+using Vanos.API.DTOs;
+using Vanos.API.Models;
+using Vanos.API.Services;
 
 namespace Vanos.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/auth")]
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
+        private readonly AppDbContext _context;
+        private readonly IPasswordHasher _passwordHasher;
+        private readonly IJwtTokenService _jwtTokenService;
 
-        public AuthController(IConfiguration configuration)
+        public AuthController(AppDbContext context, IPasswordHasher passwordHasher, IJwtTokenService jwtTokenService)
         {
-            _configuration = configuration;
+            _context = context;
+            _passwordHasher = passwordHasher;
+            _jwtTokenService = jwtTokenService;
         }
 
-        [HttpPost("login")]
-        public IActionResult Login(string email)
+        [HttpPost("register")]
+        public async Task<ActionResult<AuthResponse>> Register(RegisterRequest request)
         {
-            var secretKey = _configuration["Jwt:Key"];
-            if (string.IsNullOrEmpty(secretKey))
+            if (request.Role != Roles.Driver && request.Role != Roles.Parent)
             {
-                return StatusCode(500, "Chave de segurança não configurada.");
+                return BadRequest("Role deve ser 'Driver' ou 'Parent'.");
             }
 
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
+            if (await _context.Users.AnyAsync(u => u.Email == request.Email))
             {
-                new Claim(JwtRegisteredClaimNames.Sub, email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.Role, "Driver") 
+                return BadRequest("Este e-mail já está cadastrado.");
+            }
+
+            var user = new User
+            {
+                Email = request.Email,
+                PasswordHash = _passwordHasher.Hash(request.Password),
+                Role = request.Role
             };
 
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddHours(2),
-                signingCredentials: credentials);
-
-            return Ok(new
+            if (request.Role == Roles.Driver)
             {
-                mensagem = "Login bem-sucedido!",
-                token = new JwtSecurityTokenHandler().WriteToken(token)
-            });
+                if (string.IsNullOrWhiteSpace(request.Fullname) ||
+                    string.IsNullOrWhiteSpace(request.CPF) ||
+                    string.IsNullOrWhiteSpace(request.PhoneNumber) ||
+                    string.IsNullOrWhiteSpace(request.LicensePlate) ||
+                    request.StudentCapacity is null ||
+                    string.IsNullOrWhiteSpace(request.PixKey))
+                {
+                    return BadRequest("Dados do motorista incompletos.");
+                }
+
+                var driver = new Driver
+                {
+                    Fullname = request.Fullname,
+                    CPF = request.CPF,
+                    PhoneNumber = request.PhoneNumber,
+                    LicensePlate = request.LicensePlate,
+                    StudentCapacity = request.StudentCapacity.Value,
+                    PixKey = request.PixKey
+                };
+
+                _context.Drivers.Add(driver);
+                await _context.SaveChangesAsync();
+
+                user.DriverId = driver.Id;
+            }
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            var token = _jwtTokenService.GenerateToken(user);
+            return Ok(new AuthResponse { Token = token, Role = user.Role });
         }
     }
 }
