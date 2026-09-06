@@ -14,10 +14,12 @@ namespace Vanos.API.Data
         public DbSet<User> Users { get; set; }
         public DbSet<DriverSchool> DriverSchools { get; set; }
         public DbSet<HireRequest> HireRequests { get; set; }
+        public DbSet<Rating> Ratings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<DriverSchool>().HasKey(ds => new { ds.DriverId, ds.SchoolId });
+            modelBuilder.Entity<Rating>().HasIndex(r => new { r.DriverId, r.ParentId }).IsUnique();
         }
     }
 }
