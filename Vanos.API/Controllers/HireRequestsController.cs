@@ -135,5 +135,36 @@ namespace Vanos.API.Controllers
 
             return Ok(hireRequest);
         }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<HireRequest>>> GetHireRequests([FromQuery] int? driverId, [FromQuery] int? parentId)
+        {
+            if (driverId is not null)
+            {
+                if (driverId != User.GetDriverId())
+                {
+                    return Forbid();
+                }
+
+                return await _context.HireRequests.Where(r => r.DriverId == driverId).ToListAsync();
+            }
+
+            if (parentId is not null)
+            {
+                if (parentId != User.GetUserId())
+                {
+                    return Forbid();
+                }
+
+                var studentIds = await _context.Students
+                    .Where(s => s.ParentId == parentId)
+                    .Select(s => s.Id)
+                    .ToListAsync();
+
+                return await _context.HireRequests.Where(r => studentIds.Contains(r.StudentId)).ToListAsync();
+            }
+
+            return BadRequest("Informe driverId ou parentId.");
+        }
     }
 }

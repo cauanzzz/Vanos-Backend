@@ -144,5 +144,50 @@ namespace Vanos.API.Tests
             Assert.Equal(HireRequestStatus.Rejected, (await context.HireRequests.FindAsync(1))!.Status);
             Assert.Null((await context.Students.FindAsync(1))!.DriverId);
         }
+
+        [Fact]
+        public async Task GetHireRequests_ByDriverId_ReturnsOnlyThatDriversRequests()
+        {
+            using var context = TestHelpers.BuildContext();
+            context.HireRequests.Add(new HireRequest { Id = 1, StudentId = 1, DriverId = 1, Status = HireRequestStatus.Pending });
+            context.HireRequests.Add(new HireRequest { Id = 2, StudentId = 2, DriverId = 2, Status = HireRequestStatus.Pending });
+            await context.SaveChangesAsync();
+
+            var controller = BuildController(context, TestHelpers.BuildDriverPrincipal(1));
+
+            var result = await controller.GetHireRequests(driverId: 1, parentId: null);
+
+            var requests = Assert.IsAssignableFrom<IEnumerable<HireRequest>>(result.Value);
+            Assert.Single(requests);
+        }
+
+        [Fact]
+        public async Task GetHireRequests_ByAnotherDriversId_ReturnsForbid()
+        {
+            using var context = TestHelpers.BuildContext();
+            var controller = BuildController(context, TestHelpers.BuildDriverPrincipal(1));
+
+            var result = await controller.GetHireRequests(driverId: 2, parentId: null);
+
+            Assert.IsType<ForbidResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task GetHireRequests_ByParentId_ReturnsRequestsForTheirStudentsOnly()
+        {
+            using var context = TestHelpers.BuildContext();
+            context.Students.Add(new Student { Id = 1, FullName = "Lucas", ParentId = 10, SchoolId = 1, DriverId = null });
+            context.Students.Add(new Student { Id = 2, FullName = "Outro", ParentId = 20, SchoolId = 1, DriverId = null });
+            context.HireRequests.Add(new HireRequest { Id = 1, StudentId = 1, DriverId = 1, Status = HireRequestStatus.Pending });
+            context.HireRequests.Add(new HireRequest { Id = 2, StudentId = 2, DriverId = 1, Status = HireRequestStatus.Pending });
+            await context.SaveChangesAsync();
+
+            var controller = BuildController(context, TestHelpers.BuildParentPrincipal(10));
+
+            var result = await controller.GetHireRequests(driverId: null, parentId: 10);
+
+            var requests = Assert.IsAssignableFrom<IEnumerable<HireRequest>>(result.Value);
+            Assert.Single(requests);
+        }
     }
 }
