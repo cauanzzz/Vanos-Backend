@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Vanos.API.Data;
+using Vanos.API.Extensions;
 using Vanos.API.Models;
 
 namespace Vanos.API.Controllers
@@ -23,19 +25,17 @@ namespace Vanos.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = Roles.Parent)]
         public async Task<ActionResult<Student>> PostStudent(Student student)
         {
-            if (student.DriverId.HasValue && !await _context.Drivers.AnyAsync(d => d.Id == student.DriverId.Value))
-            {
-                return BadRequest("Motorista não encontrado. Verifique o DriverId repassado.");
-            }
-
             var schoolExists = await _context.Schools.AnyAsync(s => s.Id == student.SchoolId);
-
             if (!schoolExists)
             {
                 return BadRequest("Escola não encontrada. Verifique o SchoolId repassado.");
             }
+
+            student.ParentId = User.GetUserId();
+            student.DriverId = null;
 
             _context.Students.Add(student);
             await _context.SaveChangesAsync();
