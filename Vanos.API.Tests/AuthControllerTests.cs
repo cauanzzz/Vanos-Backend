@@ -93,5 +93,42 @@ namespace Vanos.API.Tests
 
             Assert.IsType<BadRequestObjectResult>(result.Result);
         }
+
+        [Fact]
+        public async Task Login_WithCorrectPassword_ReturnsTokenWithRealRole()
+        {
+            using var context = TestHelpers.BuildContext();
+            var controller = BuildController(context);
+            await controller.Register(new RegisterRequest { Email = "parent@example.com", Password = "Sup3rSecret!", Role = Roles.Parent });
+
+            var result = await controller.Login(new LoginRequest { Email = "parent@example.com", Password = "Sup3rSecret!" });
+
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var response = Assert.IsType<AuthResponse>(okResult.Value);
+            Assert.Equal(Roles.Parent, response.Role);
+        }
+
+        [Fact]
+        public async Task Login_WithWrongPassword_ReturnsUnauthorized()
+        {
+            using var context = TestHelpers.BuildContext();
+            var controller = BuildController(context);
+            await controller.Register(new RegisterRequest { Email = "parent@example.com", Password = "Sup3rSecret!", Role = Roles.Parent });
+
+            var result = await controller.Login(new LoginRequest { Email = "parent@example.com", Password = "WrongPassword" });
+
+            Assert.IsType<UnauthorizedObjectResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task Login_WithUnknownEmail_ReturnsUnauthorized()
+        {
+            using var context = TestHelpers.BuildContext();
+            var controller = BuildController(context);
+
+            var result = await controller.Login(new LoginRequest { Email = "nobody@example.com", Password = "Sup3rSecret!" });
+
+            Assert.IsType<UnauthorizedObjectResult>(result.Result);
+        }
     }
 }

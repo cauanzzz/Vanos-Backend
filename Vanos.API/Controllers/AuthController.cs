@@ -76,5 +76,19 @@ namespace Vanos.API.Controllers
             var token = _jwtTokenService.GenerateToken(user);
             return Ok(new AuthResponse { Token = token, Role = user.Role });
         }
+
+        [HttpPost("login")]
+        public async Task<ActionResult<AuthResponse>> Login(LoginRequest request)
+        {
+            var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == request.Email);
+
+            if (user is null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
+            {
+                return Unauthorized("E-mail ou senha inválidos.");
+            }
+
+            var token = _jwtTokenService.GenerateToken(user);
+            return Ok(new AuthResponse { Token = token, Role = user.Role });
+        }
     }
 }
