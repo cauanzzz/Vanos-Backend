@@ -19,8 +19,18 @@ namespace Vanos.API.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Student>>> GetStudents()
+        public async Task<ActionResult<IEnumerable<Student>>> GetStudents([FromQuery] int? parentId)
         {
+            if (parentId is not null)
+            {
+                if (!User.IsInRole(Roles.Parent) || parentId != User.GetUserId())
+                {
+                    return Forbid();
+                }
+
+                return await _context.Students.Where(s => s.ParentId == parentId).ToListAsync();
+            }
+
             return await _context.Students.ToListAsync();
         }
 
