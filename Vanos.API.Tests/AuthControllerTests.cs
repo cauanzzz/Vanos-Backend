@@ -67,6 +67,33 @@ namespace Vanos.API.Tests
         }
 
         [Fact]
+        public async Task Register_WithDriverRoleAndLocation_PersistsLatitudeAndLongitude()
+        {
+            using var context = TestHelpers.BuildContext();
+            var controller = BuildController(context);
+
+            var result = await controller.Register(new RegisterRequest
+            {
+                Email = "driver-loc@example.com",
+                Password = "Sup3rSecret!",
+                Role = Roles.Driver,
+                Fullname = "Cauan Braga",
+                CPF = "123.456.789-00",
+                PhoneNumber = "19 98888-7777",
+                LicensePlate = "VAN-2026",
+                StudentCapacity = 15,
+                PixKey = "cauan@email.com",
+                Latitude = -22.90,
+                Longitude = -47.06
+            });
+
+            Assert.IsType<OkObjectResult>(result.Result);
+            var driver = Assert.Single(context.Drivers);
+            Assert.Equal(-22.90, driver.Latitude);
+            Assert.Equal(-47.06, driver.Longitude);
+        }
+
+        [Fact]
         public async Task Register_WithDuplicateEmail_ReturnsBadRequest()
         {
             using var context = TestHelpers.BuildContext();

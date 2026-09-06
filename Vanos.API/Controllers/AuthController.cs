@@ -61,7 +61,9 @@ namespace Vanos.API.Controllers
                     PhoneNumber = request.PhoneNumber,
                     LicensePlate = request.LicensePlate,
                     StudentCapacity = request.StudentCapacity.Value,
-                    PixKey = request.PixKey
+                    PixKey = request.PixKey,
+                    Latitude = request.Latitude,
+                    Longitude = request.Longitude
                 };
 
                 _context.Drivers.Add(driver);

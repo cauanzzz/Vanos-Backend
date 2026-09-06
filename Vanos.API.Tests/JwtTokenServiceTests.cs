@@ -31,6 +31,21 @@ namespace Vanos.API.Tests
         }
 
         [Fact]
+        public void GenerateToken_HasExactlyOneNameIdentifierClaim_EqualToUserId()
+        {
+            var service = new JwtTokenService(BuildConfiguration());
+            var user = new User { Id = 42, Email = "parent@example.com", Role = Roles.Parent };
+
+            var token = service.GenerateToken(user);
+            var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+
+            var nameIdentifierClaims = jwt.Claims.Where(c => c.Type == ClaimTypes.NameIdentifier).ToList();
+
+            Assert.Single(nameIdentifierClaims);
+            Assert.Equal("42", nameIdentifierClaims[0].Value);
+        }
+
+        [Fact]
         public void GenerateToken_ForDriverUser_IncludesDriverIdClaim()
         {
             var service = new JwtTokenService(BuildConfiguration());

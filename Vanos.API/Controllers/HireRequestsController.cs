@@ -141,7 +141,7 @@ namespace Vanos.API.Controllers
         {
             if (driverId is not null)
             {
-                if (driverId != User.GetDriverId())
+                if (!User.IsInRole(Roles.Driver) || driverId != User.GetDriverId())
                 {
                     return Forbid();
                 }
@@ -151,7 +151,7 @@ namespace Vanos.API.Controllers
 
             if (parentId is not null)
             {
-                if (parentId != User.GetUserId())
+                if (!User.IsInRole(Roles.Parent) || parentId != User.GetUserId())
                 {
                     return Forbid();
                 }

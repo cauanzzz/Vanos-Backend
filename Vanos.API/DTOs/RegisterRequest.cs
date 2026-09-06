@@ -12,5 +12,7 @@ namespace Vanos.API.DTOs
         public string? LicensePlate { get; set; }
         public int? StudentCapacity { get; set; }
         public string? PixKey { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
     }
 }

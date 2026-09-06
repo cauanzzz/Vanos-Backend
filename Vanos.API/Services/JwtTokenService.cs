@@ -26,7 +26,6 @@ namespace Vanos.API.Services
             var claims = new List<Claim>
             {
                 new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new(JwtRegisteredClaimNames.Sub, user.Email),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new(ClaimTypes.Role, user.Role)
             };

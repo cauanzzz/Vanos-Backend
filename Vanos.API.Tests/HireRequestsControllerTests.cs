@@ -173,6 +173,17 @@ namespace Vanos.API.Tests
         }
 
         [Fact]
+        public async Task GetHireRequests_ByDriverIdWithParentCaller_ReturnsForbidWithoutThrowing()
+        {
+            using var context = TestHelpers.BuildContext();
+            var controller = BuildController(context, TestHelpers.BuildParentPrincipal(10));
+
+            var result = await controller.GetHireRequests(driverId: 1, parentId: null);
+
+            Assert.IsType<ForbidResult>(result.Result);
+        }
+
+        [Fact]
         public async Task GetHireRequests_ByParentId_ReturnsRequestsForTheirStudentsOnly()
         {
             using var context = TestHelpers.BuildContext();
