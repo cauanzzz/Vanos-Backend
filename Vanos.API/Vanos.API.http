@@ -93,3 +93,110 @@ Content-Type: application/json
   "isGoingToday": true,
   "isReturningToday": true
 }
+
+### Registrar um Pai/Responsável
+POST {{Vanos.API_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "ana.silva@example.com",
+  "password": "Sup3rSecret!",
+  "role": "Parent"
+}
+
+### Registrar um Motorista
+POST {{Vanos.API_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "cauan.braga@example.com",
+  "password": "Sup3rSecret!",
+  "role": "Driver",
+  "fullname": "Cauan Braga",
+  "cpf": "123.456.789-00",
+  "phoneNumber": "19 98888-7777",
+  "licensePlate": "VAN-2026",
+  "studentCapacity": 15,
+  "pixKey": "cauan@email.com"
+}
+
+### Login como Motorista (copiar o token retornado para as próximas requisições)
+POST {{Vanos.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "cauan.braga@example.com",
+  "password": "Sup3rSecret!"
+}
+
+### Motorista declara as escolas que atende
+PUT {{Vanos.API_HostAddress}}/api/drivers/1/schools
+Content-Type: application/json
+Authorization: Bearer {{driverToken}}
+
+[1, 2]
+
+### Login como Pai/Responsável (copiar o token retornado para as próximas requisições)
+POST {{Vanos.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "ana.silva@example.com",
+  "password": "Sup3rSecret!"
+}
+
+### Pai cadastra um aluno (sem motorista ainda)
+POST {{Vanos.API_HostAddress}}/api/students
+Content-Type: application/json
+Authorization: Bearer {{parentToken}}
+
+{
+  "fullName": "Lucas Silva",
+  "guardianName": "Ana Silva",
+  "guardianPhoneNumber": "19 97777-6666",
+  "zipCode": "13086-900",
+  "street": "Rodovia Dom Pedro I",
+  "number": "Km 136",
+  "neighborhood": "Parque das Universidades",
+  "city": "Campinas",
+  "state": "SP",
+  "schoolId": 1,
+  "isGoingToday": true,
+  "isReturningToday": true
+}
+
+### Pai busca motoristas pela escola
+GET {{Vanos.API_HostAddress}}/api/drivers/search?schoolId=1
+Authorization: Bearer {{parentToken}}
+
+### Pai envia uma solicitação de contratação
+POST {{Vanos.API_HostAddress}}/api/hirerequests
+Content-Type: application/json
+Authorization: Bearer {{parentToken}}
+
+{
+  "studentId": 1,
+  "driverId": 1
+}
+
+### Motorista vê solicitações recebidas
+GET {{Vanos.API_HostAddress}}/api/hirerequests?driverId=1
+Authorization: Bearer {{driverToken}}
+
+### Motorista aceita a solicitação
+PATCH {{Vanos.API_HostAddress}}/api/hirerequests/1/accept
+Authorization: Bearer {{driverToken}}
+
+### Pai avalia o motorista
+POST {{Vanos.API_HostAddress}}/api/ratings
+Content-Type: application/json
+Authorization: Bearer {{parentToken}}
+
+{
+  "driverId": 1,
+  "score": 5,
+  "comment": "Pontual e cuidadoso."
+}
+
+### Ver avaliações do motorista
+GET {{Vanos.API_HostAddress}}/api/drivers/1/ratings
