@@ -25,13 +25,12 @@ namespace Vanos.API.Controllers
         [HttpPost]
         public async Task<ActionResult<Student>> PostStudent(Student student)
         {
-            var driverExists = await _context.Drivers.AnyAsync(d => d.Id == student.DriverId);
-            var schoolExists = await _context.Schools.AnyAsync(s => s.Id == student.SchoolId);
-
-            if (!driverExists)
+            if (student.DriverId.HasValue && !await _context.Drivers.AnyAsync(d => d.Id == student.DriverId.Value))
             {
                 return BadRequest("Motorista não encontrado. Verifique o DriverId repassado.");
             }
+
+            var schoolExists = await _context.Schools.AnyAsync(s => s.Id == student.SchoolId);
 
             if (!schoolExists)
             {

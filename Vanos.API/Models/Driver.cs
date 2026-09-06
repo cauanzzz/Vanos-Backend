@@ -10,6 +10,8 @@
         public int StudentCapacity { get; set; }
         public string PixKey { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
 
     }
 }

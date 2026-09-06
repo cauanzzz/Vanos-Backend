@@ -21,7 +21,8 @@
         public double? Longitude { get; set; }
 
         public int SchoolId { get; set; }
-        public int DriverId { get; set; }
+        public int ParentId { get; set; }
+        public int? DriverId { get; set; }
 
         public bool IsGoingToday { get; set; } = true;
         public bool IsReturningToday { get; set; } = true;
