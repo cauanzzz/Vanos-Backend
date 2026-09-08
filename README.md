@@ -2,31 +2,32 @@
 
 **Connecting families, students, and drivers through a simpler school transportation experience.**
 
-Vanos is a school and university transportation platform built around a **B2C-led approach**: the journey starts with people looking for transportation. For drivers, the platform brings service discovery, booking requests, passenger management, and invoices into a shared workflow.
+Vanos is a school and university transportation platform built around a **B2C-led approach**. The journey starts with people looking for transportation, while drivers manage service areas, booking requests, passengers, and invoices.
 
-This repository contains the backend, built with **C# and ASP.NET Core**, combining a REST API, SQL Server persistence, and real-time communication through SignalR.
+This repository contains the backend, developed with **C# and ASP.NET Core**, combining a REST API, SQL Server persistence, and real-time communication through SignalR.
 
-## The Problem
+## Why Vanos?
 
-Finding a van that serves a specific neighborhood and educational institution often relies on personal recommendations and scattered conversations.
+Finding transportation that serves a specific neighborhood and educational institution often depends on personal recommendations and scattered conversations.
 
-Drivers also need to manage limited seating, passenger requests, daily attendance, and payments.
+Drivers also need to keep track of seating capacity, passenger requests, attendance, and payments.
 
-Vanos aims to connect these activities in one platform, from discovering transportation options to following vehicle location updates.
+Vanos brings these activities into a connected workflow: discover a driver, request transportation, manage the passenger relationship, and receive vehicle location updates.
 
 ## Features
 
-### Authentication and Access Control
+### Authentication and Authorization
 
-* JWT-based registration and login.
+* JWT-based account registration and login.
 * Driver, parent, and student roles.
 * Password hashing with BCrypt.
-* Role-based authorization and record ownership checks.
+* Authentication required by default for endpoints without explicit authorization metadata.
+* Role-based permissions and record ownership checks.
 
 ### Transportation Marketplace
 
 * Search by educational institution, city, and neighborhood.
-* Paginated results with active drivers and available seats.
+* Paginated results containing active drivers with available seats.
 * Seat availability calculated from current passenger assignments.
 * Average driver ratings.
 * Driver-managed service areas and supported institutions.
@@ -35,15 +36,15 @@ Vanos aims to connect these activities in one platform, from discovering transpo
 
 * Transportation requests associated with student profiles.
 * Driver acceptance and rejection workflows.
-* Capacity checks during acceptance.
-* Passenger assignment after a request is accepted.
+* Capacity and assignment checks during acceptance.
+* Transactional passenger allocation.
 
 ### Real-Time Tracking
 
 * Location updates published by authenticated drivers.
 * SignalR delivery through private consumer groups.
 * Recipients selected from current passenger assignments.
-* Coordinate validation.
+* Coordinate validation and per-connection update pacing.
 * Connections closed when authentication expires.
 
 ### Invoices and Payment Simulation
@@ -59,36 +60,37 @@ Vanos aims to connect these activities in one platform, from discovering transpo
 * Student profile registration.
 * Daily outbound and return attendance preferences.
 * Passenger lists scoped to the assigned driver.
-* Driver ratings linked to accepted booking requests.
+* Driver ratings associated with accepted booking requests.
 
 ## Technology Stack
 
-| Technology               | Purpose                              |
-| ------------------------ | ------------------------------------ |
-| C# / .NET 10             | Backend development                  |
-| ASP.NET Core             | REST API and authorization           |
-| Entity Framework Core    | Persistence, queries, and migrations |
-| SQL Server               | Application database                 |
-| SignalR                  | Real-time communication              |
-| JWT Bearer               | Authentication                       |
-| BCrypt                   | Password hashing                     |
-| xUnit                    | Automated testing                    |
-| SQLite                   | Relational database for tests        |
-| ASP.NET Core MVC Testing | HTTP integration testing             |
+| Technology            | Purpose                              |
+| --------------------- | ------------------------------------ |
+| C# / .NET 10          | Backend development                  |
+| ASP.NET Core          | REST API and authorization           |
+| Entity Framework Core | Persistence, queries, and migrations |
+| SQL Server            | Relational database                  |
+| SignalR               | Real-time communication              |
+| JWT Bearer            | Authentication                       |
+| BCrypt                | Password hashing                     |
+| Swagger / Swashbuckle | API documentation                    |
 
-## Project Structure
+## Repository Structure
 
-| Directory               | Responsibility                            |
-| ----------------------- | ----------------------------------------- |
-| `Vanos.API/Controllers` | API endpoints and application workflows   |
-| `Vanos.API/DTOs`        | Request and response contracts            |
-| `Vanos.API/Models`      | Domain entities                           |
-| `Vanos.API/Data`        | Database context and EF configuration     |
-| `Vanos.API/Services`    | Token generation and password hashing     |
-| `Vanos.API/Hubs`        | Real-time communication                   |
-| `Vanos.API/Extensions`  | Authenticated user identification helpers |
-| `Vanos.API/Migrations`  | Database schema history                   |
-| `Vanos.API.Tests`       | Unit and integration tests                |
+The application is located in **`Desktop/Vanos/Vanos.API`**.
+
+The following directories are relative to that application folder:
+
+| Directory     | Responsibility                            |
+| ------------- | ----------------------------------------- |
+| `Controllers` | API endpoints and application workflows   |
+| `DTOs`        | Request and response contracts            |
+| `Models`      | Domain entities                           |
+| `Data`        | Database context and EF configuration     |
+| `Services`    | Token generation and password hashing     |
+| `Hubs`        | Real-time communication                   |
+| `Extensions`  | Authenticated user identification helpers |
+| `Migrations`  | Database schema history                   |
 
 ## Engineering Decisions
 
@@ -102,7 +104,7 @@ Marketplace queries return discovery-specific fields and calculate availability 
 
 ### Consistent Seat Allocation
 
-Booking acceptance checks capacity within a serializable transaction to protect seat allocation during competing requests.
+Booking acceptance checks capacity within a serializable transaction to protect passenger allocation during competing requests.
 
 ### Idempotent Payment Simulation
 
@@ -122,14 +124,17 @@ Clients cannot select arbitrary tracking groups. The server determines recipient
 | `PUT`   | `/api/drivers/{id}/service-areas`        | Update service areas            |
 | `PUT`   | `/api/drivers/{id}/schools`              | Update supported institutions   |
 | `POST`  | `/api/students`                          | Create a student profile        |
-| `GET`   | `/api/students`                          | List owned profiles             |
+| `GET`   | `/api/students`                          | List owned student profiles     |
 | `POST`  | `/api/hirerequests`                      | Submit a booking request        |
 | `PATCH` | `/api/hirerequests/{id}/accept`          | Accept a booking request        |
+| `PATCH` | `/api/hirerequests/{id}/reject`          | Reject a booking request        |
 | `GET`   | `/api/monthlyfees/mine`                  | List owned invoices             |
 | `POST`  | `/api/monthlyfees`                       | Create an invoice               |
 | `POST`  | `/api/monthlyfees/{id}/simulate-payment` | Simulate payment                |
 
 The tracking Hub is available at `/hubs/tracking`.
+
+Marketplace discovery and personal invoice queries are available to `Parent` and `Student` accounts. Drivers use their corresponding management endpoints.
 
 ## Running Locally
 
@@ -137,55 +142,98 @@ The tracking Hub is available at `/hubs/tracking`.
 
 * .NET 10 SDK.
 * An accessible SQL Server instance.
-* `dotnet-ef` compatible with the project's Entity Framework Core version.
+* `dotnet-ef` 10.0.9, matching the project's EF Core version.
 
-### Setup
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/cauanzzz/Vanos-Backend.git
-cd Vanos-Backend
+cd Vanos-Backend/Desktop/Vanos/Vanos.API
 dotnet restore
 ```
 
-Configure your database connection and a randomly generated JWT signing secret:
+Run the remaining commands from this application directory.
+
+### 2. Configure the Application
+
+Set your SQL Server connection string:
 
 ```bash
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "YOUR_CONNECTION_STRING" --project Vanos.API
-dotnet user-secrets set "Jwt:Key" "YOUR_RANDOM_SECRET_OF_AT_LEAST_32_BYTES" --project Vanos.API
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "YOUR_CONNECTION_STRING"
+```
+
+Set a randomly generated JWT signing secret:
+
+```bash
+dotnet user-secrets set "Jwt:Key" "YOUR_RANDOM_SECRET_OF_AT_LEAST_32_BYTES"
 ```
 
 Replace the placeholders with your own values. Keep credentials outside version-controlled files.
 
-Apply the committed database migrations and start the API:
+In Development, the application creates a temporary signing key if none is configured. Restarting the application invalidates tokens issued with that temporary key.
+
+### 3. Build and Apply Migrations
+
+If `dotnet-ef` is not installed:
 
 ```bash
-dotnet ef database update --project Vanos.API --startup-project Vanos.API
-dotnet run --project Vanos.API --launch-profile https
+dotnet tool install --global dotnet-ef --version 10.0.9
 ```
 
-Local URLs are configured in `Vanos.API/Properties/launchSettings.json`.
-
-### Tests
+Build the application and apply the committed migrations:
 
 ```bash
-dotnet test Vanos.API.Tests/Vanos.API.Tests.csproj
+dotnet build
+dotnet ef database update
 ```
 
-The test suite includes scenarios for HTTP authorization, invoice ownership, marketplace filtering, seat availability, and repeated or concurrent payment confirmations.
+The `CompleteVanosMvp` migration is already included. There is no need to generate it again during setup.
 
-## Project Status
+### 4. Start the API
 
-**MVP under development.** The payment module uses simulation and does not process real financial transactions. Production readiness and SQL Server integration remain subject to validation.
+```bash
+dotnet run --launch-profile https
+```
 
-Planned improvements:
+With the default HTTPS launch profile, Swagger is available at:
 
-* Payment provider integration with authenticated webhooks.
-* Transportation contracts and recurring invoice generation.
-* Trip lifecycle management with explicit tracking start and end.
-* Driver document verification.
-* Spatially indexed geographic queries.
-* SignalR distribution across multiple application instances.
+https://localhost:7154/swagger
+
+Local addresses are configured in `Properties/launchSettings.json`.
+
+Protected HTTP requests require a JWT in the authorization header:
+
+```http
+Authorization: Bearer YOUR_ACCESS_TOKEN
+```
+
+## Payment Simulation
+
+Payment simulation requires both:
+
+* The `Development` environment.
+* `Payments:EnableSimulation` set to `true`.
+
+Simulation is blocked in other environments, even when the configuration flag is enabled.
+
+This module does not process real financial transactions.
+
+## Validation Status
+
+Local build, SQL Server migration application, token issuance, and selected endpoint flows have been manually exercised by the maintainer.
+
+An automated test project is not currently included in this repository. Automated coverage and end-to-end validation of tracking isolation and concurrent operations remain pending.
+
+## Roadmap
+
+* Restore and integrate automated tests.
+* Integrate a payment provider with authenticated webhooks.
+* Introduce transportation contracts and recurring invoice generation.
+* Add trip lifecycle management with explicit tracking start and end.
+* Implement driver document verification.
+* Add spatially indexed geographic queries.
+* Support SignalR distribution across multiple application instances.
 
 ---
 
-**Vanos — bringing transportation discovery, passenger management, and real-time visibility into one platform.**
+**Vanos — transportation discovery, passenger management, and real-time visibility in one platform.**
