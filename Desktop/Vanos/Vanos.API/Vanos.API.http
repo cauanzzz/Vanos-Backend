@@ -1,0 +1,203 @@
+# Legacy examples: public catalogue/direct-driver POST routes were removed. See MVP.http and README-MVP.md.
+@Vanos.API_HostAddress = https://localhost:7154
+
+### Buscar todos os Motoristas
+GET {{Vanos.API_HostAddress}}/api/drivers
+Accept: application/json
+
+### Cadastrar um Novo Motorista
+POST {{Vanos.API_HostAddress}}/api/drivers
+Content-Type: application/json
+
+{
+  "fullName": "Cauan Braga",
+  "cpf": "123.456.789-00",
+  "phoneNumber": "19 98888-7777",
+  "licensePlate": "VAN-2026",
+  "studentCapacity": 15,
+  "pixKey": "cauan@email.com",
+  "isActive": true
+}
+
+### Cadastrar um Novo Aluno vinculado ao Motorista 1
+POST {{Vanos.API_HostAddress}}/api/students
+Content-Type: application/json
+
+{
+  "fullName": "Lucas Silva",
+  "guardianName": "Ana Silva",
+  "guardianPhoneNumber": "19 97777-6666",
+  "zipCode": "13086-900",
+  "street": "Rodovia Dom Pedro I",
+  "number": "Km 136",
+  "complement": "Campus",
+  "neighborhood": "Parque das Universidades",
+  "city": "Campinas",
+  "state": "SP",
+  "schoolName": "PUC-Campinas",
+  "driverId": 1,
+  "isGoingToday": true,
+  "isReturningToday": true
+}
+
+### Cadastrar uma Nova Escola
+POST {{Vanos.API_HostAddress}}/api/schools
+Content-Type: application/json
+
+{
+  "name": "PUC-Campinas",
+  "zipCode": "13086-900",
+  "street": "Rodovia Dom Pedro I",
+  "number": "Km 136",
+  "neighborhood": "Parque das Universidades",
+  "city": "Campinas",
+  "state": "SP"
+}
+
+### Gerar uma Mensalidade (Ligando o Aluno 1 ao Motorista 1)
+POST {{Vanos.API_HostAddress}}/api/monthlyfees
+Content-Type: application/json
+
+{
+  "studentId": 1,
+  "driverId": 1,
+  "amount": 350.00,
+  "dueDate": "2026-08-05T00:00:00",
+  "isPaid": false
+}
+
+### Buscar alunos de um motorista específico (Motorista 1)
+GET {{Vanos.API_HostAddress}}/api/drivers/1/students
+Accept: application/json
+
+### Atualizar status de presença diária do Aluno 1
+PATCH {{Vanos.API_HostAddress}}/api/students/1/status?isGoingToday=false&isReturningToday=true
+Accept: application/json
+
+### Cadastrar um Novo Aluno vinculado ao Motorista 1 e Escola 2
+POST {{Vanos.API_HostAddress}}/api/students
+Content-Type: application/json
+
+{
+  "fullName": "Lucas Silva",
+  "guardianName": "Ana Silva",
+  "guardianPhoneNumber": "19 97777-6666",
+  "zipCode": "13086-900",
+  "street": "Rodovia Dom Pedro I",
+  "number": "Km 136",
+  "complement": "Campus",
+  "neighborhood": "Parque das Universidades",
+  "city": "Campinas",
+  "state": "SP",
+  "schoolId": 2,
+  "driverId": 1,
+  "isGoingToday": true,
+  "isReturningToday": true
+}
+
+### Registrar um Pai/Responsável
+POST {{Vanos.API_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "ana.silva@example.com",
+  "password": "Sup3rSecret!",
+  "role": "Parent"
+}
+
+### Registrar um Motorista
+POST {{Vanos.API_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "cauan.braga@example.com",
+  "password": "Sup3rSecret!",
+  "role": "Driver",
+  "fullname": "Cauan Braga",
+  "cpf": "123.456.789-00",
+  "phoneNumber": "19 98888-7777",
+  "licensePlate": "VAN-2026",
+  "studentCapacity": 15,
+  "pixKey": "cauan@email.com"
+}
+
+### Login como Motorista (copiar o token retornado para as próximas requisições)
+POST {{Vanos.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "cauan.braga@example.com",
+  "password": "Sup3rSecret!"
+}
+
+### Motorista declara as escolas que atende
+PUT {{Vanos.API_HostAddress}}/api/drivers/1/schools
+Content-Type: application/json
+Authorization: Bearer {{driverToken}}
+
+[1, 2]
+
+### Login como Pai/Responsável (copiar o token retornado para as próximas requisições)
+POST {{Vanos.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "ana.silva@example.com",
+  "password": "Sup3rSecret!"
+}
+
+### Pai cadastra um aluno (sem motorista ainda)
+POST {{Vanos.API_HostAddress}}/api/students
+Content-Type: application/json
+Authorization: Bearer {{parentToken}}
+
+{
+  "fullName": "Lucas Silva",
+  "guardianName": "Ana Silva",
+  "guardianPhoneNumber": "19 97777-6666",
+  "zipCode": "13086-900",
+  "street": "Rodovia Dom Pedro I",
+  "number": "Km 136",
+  "neighborhood": "Parque das Universidades",
+  "city": "Campinas",
+  "state": "SP",
+  "schoolId": 1,
+  "isGoingToday": true,
+  "isReturningToday": true
+}
+
+### Pai busca motoristas pela escola
+GET {{Vanos.API_HostAddress}}/api/drivers/search?schoolId=1
+Authorization: Bearer {{parentToken}}
+
+### Pai envia uma solicitação de contratação
+POST {{Vanos.API_HostAddress}}/api/hirerequests
+Content-Type: application/json
+Authorization: Bearer {{parentToken}}
+
+{
+  "studentId": 1,
+  "driverId": 1
+}
+
+### Motorista vê solicitações recebidas
+GET {{Vanos.API_HostAddress}}/api/hirerequests?driverId=1
+Authorization: Bearer {{driverToken}}
+
+### Motorista aceita a solicitação
+PATCH {{Vanos.API_HostAddress}}/api/hirerequests/1/accept
+Authorization: Bearer {{driverToken}}
+
+### Pai avalia o motorista
+POST {{Vanos.API_HostAddress}}/api/ratings
+Content-Type: application/json
+Authorization: Bearer {{parentToken}}
+
+{
+  "driverId": 1,
+  "score": 5,
+  "comment": "Pontual e cuidadoso."
+}
+
+### Ver avaliações do motorista
+GET {{Vanos.API_HostAddress}}/api/drivers/1/ratings

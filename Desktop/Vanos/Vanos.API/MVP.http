@@ -1,0 +1,36 @@
+@baseUrl = https://localhost:7154
+@consumerToken = REPLACE_WITH_LOGIN_TOKEN
+@driverToken = REPLACE_WITH_DRIVER_LOGIN_TOKEN
+@driverId = 1
+@studentId = 1
+@feeId = 1
+
+### Adjust baseUrl to launchSettings.json; register and create own student using existing auth flow.
+GET {{baseUrl}}/api/drivers/marketplace?city=Campinas&neighborhood=Centro&page=1&pageSize=20
+Authorization: Bearer {{consumerToken}}
+
+### Own service areas
+PUT {{baseUrl}}/api/drivers/{{driverId}}/service-areas
+Authorization: Bearer {{driverToken}}
+Content-Type: application/json
+
+[{"city":"Campinas","neighborhood":"Centro"}]
+
+### Issue an invoice to a currently linked student
+POST {{baseUrl}}/api/monthlyfees
+Authorization: Bearer {{driverToken}}
+Content-Type: application/json
+
+{"studentId":{{studentId}},"amount":250.00,"dueDate":"2026-10-10"}
+
+### Pending invoices belonging to the logged-in consumer
+GET {{baseUrl}}/api/monthlyfees/mine
+Authorization: Bearer {{consumerToken}}
+
+### Development only; repeat to check stable PaymentDate
+POST {{baseUrl}}/api/monthlyfees/{{feeId}}/simulate-payment
+Authorization: Bearer {{consumerToken}}
+
+### All own invoices
+GET {{baseUrl}}/api/monthlyfees/mine?pendingOnly=false
+Authorization: Bearer {{consumerToken}}
