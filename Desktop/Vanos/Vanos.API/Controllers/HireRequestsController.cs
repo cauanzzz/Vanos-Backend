@@ -1,4 +1,5 @@
 using System.Data;
+using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -71,6 +72,20 @@ namespace Vanos.API.Controllers
         [Authorize(Roles = Roles.Driver)]
         public async Task<IActionResult> Accept(int id)
         {
+            try
+            {
+                return await AcceptTransaction(id);
+            }
+            catch (Exception ex) when (IsSqlServerDeadlock(ex))
+            {
+                // The transaction has been disposed and rolled back before reaching this handler.
+                _context.ChangeTracker.Clear();
+                return Conflict("Outra contratação foi processada simultaneamente. Atualize e tente novamente.");
+            }
+        }
+
+        private async Task<IActionResult> AcceptTransaction(int id)
+        {
             await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             var hireRequest = await _context.HireRequests.FindAsync(id);
             if (hireRequest is null)
@@ -120,6 +135,20 @@ namespace Vanos.API.Controllers
         [Authorize(Roles = Roles.Driver)]
         public async Task<IActionResult> Reject(int id)
         {
+            try
+            {
+                return await RejectTransaction(id);
+            }
+            catch (Exception ex) when (IsSqlServerDeadlock(ex))
+            {
+                // The transaction has been disposed and rolled back before reaching this handler.
+                _context.ChangeTracker.Clear();
+                return Conflict("Outra contratação foi processada simultaneamente. Atualize e tente novamente.");
+            }
+        }
+
+        private async Task<IActionResult> RejectTransaction(int id)
+        {
             await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
             var hireRequest = await _context.HireRequests.FindAsync(id);
             if (hireRequest is null)
@@ -143,6 +172,16 @@ namespace Vanos.API.Controllers
 
             await transaction.CommitAsync();
             return Ok(hireRequest);
+        }
+
+        private static bool IsSqlServerDeadlock(Exception exception)
+        {
+            for (Exception? current = exception; current is not null; current = current.InnerException)
+            {
+                if (current is SqlException sql && sql.Number == 1205)
+                    return true;
+            }
+            return false;
         }
 
         [HttpGet]
@@ -177,3 +216,4 @@ namespace Vanos.API.Controllers
         }
     }
 }
+

@@ -68,14 +68,9 @@ public class SqlServerIntegrationTests
                 await using var db = new AppDbContext(options);
                 var controller = new HireRequestsController(db) { ControllerContext = new ControllerContext
                     { HttpContext = new DefaultHttpContext { User = TestHelpers.BuildDriverPrincipal(drivers[1].Id) } } };
-                try
-                {
-                    var result = await controller.Accept(id);
-                    Assert.True(result is OkObjectResult or ConflictObjectResult);
-                    return result is OkObjectResult;
-                }
-                catch (SqlException ex) when (ex.Number == 1205) { return false; }
-                catch (DbUpdateException ex) when (ex.InnerException is SqlException sql && sql.Number == 1205) { return false; }
+                var result = await controller.Accept(id);
+                Assert.True(result is OkObjectResult or ConflictObjectResult);
+                return result is OkObjectResult;
             }
             var accepted = await Task.WhenAll(Accept(hireA.Id), Accept(hireB.Id));
             Assert.Equal(1, accepted.Count(result => result));
@@ -85,3 +80,4 @@ public class SqlServerIntegrationTests
         finally { await setup.Database.EnsureDeletedAsync(); }
     }
 }
+
