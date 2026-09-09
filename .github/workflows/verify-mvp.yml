@@ -1,0 +1,52 @@
+name: Verify Vanos MVP
+on:
+  push:
+    branches: ['codex/verify-vanos-mvp-*']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: 'Y'
+          MSSQL_SA_PASSWORD: 'Vanos_CI_Only!92746'
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" -b'
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+          --health-start-period 20s
+    env:
+      DOTNET_NOLOGO: 'true'
+      DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+      VANOS_TEST_SQLSERVER: 'Server=localhost,1433;User ID=sa;Password=Vanos_CI_Only!92746;Encrypt=True;TrustServerCertificate=True'
+    defaults:
+      run:
+        working-directory: Desktop/Vanos
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore Vanos.sln
+      - name: Build
+        run: dotnet build Vanos.sln --configuration Release --no-restore
+      - name: Test API, SignalR and SQL Server migrations
+        run: dotnet test Vanos.API.Tests/Vanos.API.Tests.csproj --configuration Release --no-build --logger 'trx;LogFileName=verification.trx' --results-directory TestResults --blame-hang-timeout 3m
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vanos-test-results
+          path: Desktop/Vanos/TestResults
+          if-no-files-found: ignore
